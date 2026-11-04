@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LC Burgers</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --yellow: #F5C800;
+      --black: #111111;
+      --white: #FFFFFF;
+      --gray: #555;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: var(--white);
+      color: var(--black);
+      overflow-x: hidden;
+    }
+
+    .deco {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    nav {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      border-bottom: 3px solid var(--black);
+      background: var(--white);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .logo span { color: var(--yellow); background: var(--black); padding: 2px 8px; border-radius: 4px; }
+    .nav-links { display: flex; gap: 28px; list-style: none; }
+    .nav-links a {
+      color: var(--black);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--yellow); }
+
+    /* --- HERO FIX --- */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 72px 48px 64px;
+      background: var(--white);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 420px;
+      gap: 20px;
+    }
+
+    .hero-content {
+      max-width: 60%;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .hero-logo img {
+      width: 420px;
+      height: auto;
+      object-fit: contain;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 40px;
+      margin-right: 40px;
+    }
+
+    .hero-tag {
+      background: var(--yellow);
+      color: var(--black);
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      max-width: 700px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      -webkit-text-stroke: 3px var(--black);
+      color: var(--yellow);
+    }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--gray);
+      max-width: 480px;
+      line-height: 1.6;
+    }
+    .hero-sub strong { color: var(--black); }
+
+    .hero-btns {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 26px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      border: 3px solid var(--black);
+      transition: transform 0.15s;
+    }
+    .btn:hover { transform: translateY(-3px); }
+    .btn-primary { background: var(--yellow); color: var(--black); }
+    .btn-secondary { background: var(--white); color: var(--black); }
+
+    .divider {
+      height: 6px;
+      background: var(--black);
+    }
+
+    section {
+      position: relative;
+      overflow: hidden;
+      padding: 72px 48px;
+    }
+    .section-inner { max-width: 1000px; margin: 0 auto; position: relative; z-index: 2; }
+    .section-tag {
+      display: inline-block;
+      background: var(--black);
+      color: var(--yellow);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 40px;
+    }
+
+    #menu { background: var(--white); }
+    .menu-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f9f6e8;
+      border: 2px solid var(--yellow);
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 0,88rem;
+      font-weight: 700;
+      margin-bottom: 36px;
+    }
+    .menu-list { display: flex; flex-direction: column; }
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 28px 0;
+      border-bottom: 2px solid var(--black);
+    }
+    .menu-item:first-child { border-top: 2px solid var(--black); }
+    .menu-info { flex: 1; }
+    .menu-info h3 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .menu-info p {
+      font-size: 1	rem;
+      color: var(--gray);
+      line-height: 1.55;
+      max-width: 480px;
+    }
+    .tag-papas {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: var(--yellow);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+    .menu-price {
+      font-size: 1.5rem;
+      font-weight: 1000;
+      font-family: 'Times New Roman', sans-serif;
+      color: var(--black);
+      white-space: nowrap;
+    }
+
+    .extras-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 2px solid #ddd;
+      gap: 24px;
+    }
+    .extras-row h3 { font-size: 1rem; font-weight: 800; }
+    .extras-row p { font-size: 0.85rem; color: var(--gray); }
+    .extras-price { font-size: 1.2rem; font-weight: 900; color: var(--gray); }
+
+    #nosotros { background: var(--black); color: var(--white); }
+    #nosotros .section-tag { background: var(--yellow); color: var(--black); }
+    .story-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .story-text p {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.80);
+      margin-bottom: 16px;
+    }
+    .story-text p strong { color: var(--yellow); }
+
+    .story-circle {
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      border: 5px solid var(--yellow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      gap: 12px;
+    }
+    .story-circle .emoji { font-size: 3.5rem; }
+    .story-circle p { font-size: 0.88rem; color: rgba(255,255,255,0.75); }
+    .story-circle strong { color: var(--yellow); font-size: 1.1rem; }
+
+    .cta-section {
+      background: var(--yellow);
+      padding: 64px 48px;
+      text-align: center;
+      position: relative;
+    }
+    .cta-section h2 {
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-weight: 900;
+      color: var(--black);
+      margin-bottom: 10px;
+    }
+    .cta-section p {
+      color: rgba(0,0,0,0.65);
+      font-size: 1rem;
+      margin-bottom: 28px;
+    }
+    .cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-cta-wa {
+      background: var(--black);
+      color: var(--yellow);
+    }
+    .btn-cta-ig {
+      background: var(--white);
+      color: var(--black);
+    }
+
+    footer {
+      background: var(--black);
+      color: rgba(255,255,255,0.45);
+      text-align: center;
+      padding: 28px 48px;
+      font-size: 0.82rem;
+    }
+    footer strong { color: var(--yellow); }
+
+    @media (max-width: 700px) {
+      nav { padding: 16px 20px; }
+      nav .nav-links { display: none; }
+      .hero { flex-direction: column; text-align: left; }
+      .hero-content { max-width: 100%; }
+      .hero-logo img { width: 180px; margin-top: 20px; }
+      section, .cta-section { padding: 56px 20px; }
+      .story-grid { grid-template-columns: 1fr; }
+      .story-circle { margin: auto; }
+      footer { padding: 24px 20px; }
+      .menu-price { font-size: 1.15rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="logo"><span>LC</span> BURGERS</div>
+    <ul class="nav-links">
+      <li><a href="#menu">Menú</a></li>
+      <li><a href="#nosotros">Nosotros</a></li>
+      <li><a href="#pedir">Pedir</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+
+    <svg class="deco" style="top:-20px;right:-60px;width:420px;opacity:0.08" viewBox="0 0 400 400" fill="none">
+      <path d="M50 350 C150 200, 300 350, 380 80" stroke="black" stroke-width="22" stroke-linecap="round"/>
+      <path d="M20 100 C100 300, 250 50, 380 300" stroke="black" stroke-width="18" stroke-linecap="round"/>
+      <circle cx="320" cy="50" r="30" stroke="black" stroke-width="18" fill="none"/>
+    </svg>
+
+    <svg class="deco" style="bottom:-30px;left:-40px;width:300px;opacity:0.07" viewBox="0 0 300 300" fill="none">
+      <path d="M280 20 C100 80, 200 200, 20 280" stroke="black" stroke-width="22" stroke-linecap="round"/>
+      <circle cx="60" cy="260" r="25" stroke="black" stroke-width="18" fill="none"/>
+    </svg>
+
+    <div class="hero-content">
+      <div class="hero-tag">🛵 Solo domicilios · Cocina oculta</div>
+      <h1>Sabor que<br>conquista <em>desde<br>el primer bocado</em></h1>
+      <p class="hero-sub">
+        <strong>Carne Angus 180gr, panes artesanales y salsas propias.</strong><br>
+        Sin local, sin intermediarios — solo sabor directo a tu puerta.
+      </p>
+      <div class="hero-btns">
+        <a href="https://wa.me/573014894200" class="btn btn-primary">📲 Pedir por WhatsApp</a>
+        <a href="#menu" class="btn btn-secondary">Ver menú</a>
+      </div>
+    </div>
+
+    <div class="hero-logo">
+      <img src="lcburgerslogo.png" alt="LC Burgers Logo">
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- MENÚ -->
+  <section id="menu">
+    <svg class="deco" style="top:0;right:0;width:350px;opacity:0.05" viewBox="0 0 350 350" fill="none">
+      <path d="M340 10 C200 80, 280 200, 20 340" stroke="black" stroke-width="24" stroke-linecap="round"/>
+      <path d="M300 340 C180 200, 60 280, 10 30" stroke="black" stroke-width="16" stroke-linecap="round"/>
+    </svg>
+
+    <div class="section-inner">
+      <span class="section-tag">Nuestro menú</span>
+      <h2 class="section-title">BURGERS</h2>
+
+      <div class="menu-note">🍟 Todas las burgers incluyen porción de papas</div>
+
+      <div class="menu-list">
+
+  <div class="menu-item">
+    <div class="menu-info">
+      <h3>La de Siempre</h3>
+      <p>Carne Angus 180gr con doble cheddar, tocineta melada y cebolla grille que conquista desde el primer bocado.</p>
+      <span class="tag-papas">+ Papas incluidas</span>
+    </div>
+    <div class="menu-price">$19.000</div>
+  </div>
+
+  <div class="menu-item">
+    <div class="menu-info">
+      <h3>AP</h3>
+      <p>Carne Angus 180gr con doble cheddar, tocineta melada, aros de cebolla y un toque tropical de melado de piña.</p>
+      <span class="tag-papas">+ Papas incluidas</span>
+    </div>
+    <div class="menu-price">$21.000</div>
+  </div>
+
+  <div class="menu-item">
+    <div class="menu-info">
+      <h3>RX</h3>
+      <p>Carne Angus 180gr con doble cheddar, tocineta melada, aros de cebolla y trozos de chorizo con suave queso crema que la hacen irresistible.</p>
+      <span class="tag-papas">+ Papas incluidas</span>
+    </div>
+    <div class="menu-price">$23.000</div>
+  </div>
+
+  <div class="menu-item">
+    <div class="menu-info">
+      <h3>CK</h3>
+      <p>Carne Angus 180gr y pollo apanado, acompañados de doble cheddar, tocineta, aros de cebolla y piña. Una mezcla de texturas crujientes y sabor tropical.</p>
+      <span class="tag-papas">+ Papas incluidas</span>
+    </div>
+    <div class="menu-price">$25.000</div>
+  </div>
+
+  <div class="menu-item">
+    <div class="menu-info">
+      <h3>LC</h3>
+      <p>Doble Carne Angus 180gr, doble cheddar, queso crema, chicharrón crocante, cebolla grille y aros de cebolla. La hamburguesa insignia de la casa, creada para los que no se conforman con menos.</p>
+      <span class="tag-papas">+ Papas incluidas</span>
+    </div>
+    <div class="menu-price">$27.000</div>
+  </div>
+
+</div>
+
+      <div style="margin-top: 16px;">
+        <div class="extras-row">
+          <div>
+            <h3>Coca-Cola Mini</h3>
+            <p>La compañera perfecta para tu burger.</p>
+          </div>
+          <div class="extras-price">$2.500</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- NOSOTROS -->
+  <section id="nosotros">
+    <svg class="deco" style="top:-10px;left:-50px;width:380px;opacity:0.12" viewBox="0 0 380 380" fill="none">
+      <path d="M360 20 C180 100, 280 280, 20 360" stroke="white" stroke-width="22" stroke-linecap="round"/>
+      <circle cx="50" cy="50" r="35" stroke="white" stroke-width="18" fill="none"/>
+    </svg>
+
+    <div class="section-inner">
+      <span class="section-tag">Nuestra historia</span>
+
+      <div class="story-grid">
+        <div class="story-text">
+          <h2 class="section-title" style="color:#fff">Dos amigos.<br>Un sueño grande.</h2>
+          <p>Todo empezó en la cocina de nuestra casa — con hambre de crear algo diferente, nuestras propias recetas y la convicción de que podíamos hacerlo mejor.</p>
+          <p>No tenemos local. Somos una <strong>cocina oculta</strong> porque creemos que lo más importante no está en las cuatro paredes, sino en lo que sale de ellas: una burger que valga la pena el pedido.</p>
+          <p>Nuestra meta es grande: <strong>convertirnos en la hamburguesería que todos en la ciudad tienen en el speed dial</strong>. Y cada domicilio que hacemos es un paso hacia allá.</p>
+        </div>
+
+        <div class="story-visual">
+          <div class="story-circle">
+            <div class="emoji">🍔</div>
+            <strong>Calidad · Precio · Pasión</strong>
+            <p>De nuestra cocina<br>directo a tu puerta</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section" id="pedir">
+    <svg class="deco" style="top:-20px;right:-40px;width:300px;opacity:0.12" viewBox="0 0 300 300" fill="none">
+      <path d="M280 10 C140 100, 200 200, 10 280" stroke="black" stroke-width="22" stroke-linecap="round"/>
+      <circle cx="250" cy="250" r="28" stroke="black" stroke-width="18" fill="none"/>
+    </svg>
+
+    <h2>¿Ya tienes el antojo?</h2>
+    <p>Haz tu pedido ahora. Sin filas, sin esperas — solo tu burger camino a casa.</p>
+
+    <div class="cta-btns">
+      <a href="https://wa.me/573014894200" class="btn btn-cta-wa">📲 WhatsApp · 301 4894200</a>
+      <a href="https://instagram.com/lc_burgers" class="btn btn-cta-ig">📸 @lc_burgers</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <strong>LC BURGERS</strong> · Cocina oculta · Solo domicilios<br>
+    <span style="margin-top:6px;display:inline-block">📲 301 4894200 &nbsp;|&nbsp; 📸 @lc_burgers</span>
+  </footer>
+
+</body>
+</html>
